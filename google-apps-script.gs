@@ -5,9 +5,38 @@ const SHEET_NAME = 'ありがとう日記ログ';
 const SPREADSHEET_ID = '';
 
 function doPost(e) {
+  try {
+    const payload = parsePayload_(e);
+    return createResponse_(appendPayload_(payload));
+  } catch (error) {
+    return createResponse_({ ok: false, error: error.message });
+  }
+}
+
+function doGet(e) {
+  const callback = e && e.parameter && e.parameter.callback;
+
+  try {
+    if (e && e.parameter && e.parameter.payload) {
+      return createResponse_(appendPayload_(parsePayload_(e)), callback);
+    }
+
+    return createResponse_({
+      ok: true,
+      message: 'ありがとう日記の受信用Webアプリです。',
+    }, callback);
+  } catch (error) {
+    return createResponse_({ ok: false, error: error.message }, callback);
+  }
+}
+
+function appendPayload_(payload) {
   const sheet = getLogSheet_();
-  const payload = parsePayload_(e);
   const entries = Array.isArray(payload.entries) ? payload.entries : [];
+
+  if (!payload.date || entries.length === 0) {
+    throw new Error('日付またはありがとう内容がありません。');
+  }
 
   sheet.appendRow([
     new Date(),
@@ -26,15 +55,11 @@ function doPost(e) {
     payload.userAgent || '',
   ]);
 
-  return ContentService
-    .createTextOutput(JSON.stringify({ ok: true }))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function doGet() {
-  return ContentService
-    .createTextOutput('ありがとう日記の受信用Webアプリです。')
-    .setMimeType(ContentService.MimeType.TEXT);
+  return {
+    ok: true,
+    row: sheet.getLastRow(),
+    count: entries.length,
+  };
 }
 
 function getLogSheet_() {
@@ -71,6 +96,14 @@ function getLogSheet_() {
 }
 
 function parsePayload_(e) {
+  if (e && e.parameter && e.parameter.payload) {
+    try {
+      return JSON.parse(e.parameter.payload);
+    } catch (error) {
+      return {};
+    }
+  }
+
   if (!e || !e.postData || !e.postData.contents) {
     return {};
   }
@@ -80,4 +113,18 @@ function parsePayload_(e) {
   } catch (error) {
     return {};
   }
+}
+
+function createResponse_(payload, callback) {
+  const body = JSON.stringify(payload);
+
+  if (callback && /^[A-Za-z_$][0-9A-Za-z_$]*(\.[A-Za-z_$][0-9A-Za-z_$]*)*$/.test(callback)) {
+    return ContentService
+      .createTextOutput(callback + '(' + body + ');')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+
+  return ContentService
+    .createTextOutput(body)
+    .setMimeType(ContentService.MimeType.JSON);
 }

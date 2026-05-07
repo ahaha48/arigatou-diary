@@ -1039,6 +1039,10 @@
       return /\/dev(\?|$)/.test(endpoint);
     }
 
+    function isValidWebAppUrl(endpoint) {
+      return /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(\?|$)/.test(endpoint);
+    }
+
     function updateSheetStatus(message) {
       const configured = Boolean(getSheetEndpoint());
       sheetStatus.classList.toggle("connected", configured);
@@ -1245,6 +1249,13 @@
         return;
       }
 
+      if (!isValidWebAppUrl(endpoint)) {
+        updateSheetStatus("URL確認");
+        showSheetMessage("WebアプリURLは https://script.google.com/macros/s/.../exec の形で、最後の /exec まで丸ごと貼ってください。");
+        showToast("WebアプリURLを確認してください。");
+        return;
+      }
+
       updateSheetStatus("確認中");
       clearSheetMessage();
       testSheetButton.disabled = true;
@@ -1275,6 +1286,15 @@
         showSheetMessage("URLが /dev で終わっています。デプロイ後に発行される /exec のWebアプリURLを使ってください。");
         if (options.notify) {
           showToast("WebアプリURLは /exec のURLを使ってください。");
+        }
+        return false;
+      }
+
+      if (!isValidWebAppUrl(endpoint)) {
+        updateSheetStatus("URL確認");
+        showSheetMessage("WebアプリURLは https://script.google.com/macros/s/.../exec の形で、最後の /exec まで丸ごと貼ってください。");
+        if (options.notify) {
+          showToast("WebアプリURLを確認してください。");
         }
         return false;
       }

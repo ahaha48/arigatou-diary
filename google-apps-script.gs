@@ -3,6 +3,7 @@
  */
 const SHEET_NAME = 'ありがとう日記ログ';
 const SPREADSHEET_ID = '';
+const SCRIPT_VERSION = '2026-05-08-jsonp';
 
 function doPost(e) {
   try {
@@ -23,7 +24,8 @@ function doGet(e) {
 
     return createResponse_({
       ok: true,
-      message: 'ありがとう日記の受信用Webアプリです。',
+      message: '接続OK: ありがとう日記の受信用Webアプリです。version=' + SCRIPT_VERSION,
+      version: SCRIPT_VERSION,
     }, callback);
   } catch (error) {
     return createResponse_({ ok: false, error: error.message }, callback);
@@ -59,6 +61,7 @@ function appendPayload_(payload) {
     ok: true,
     row: sheet.getLastRow(),
     count: entries.length,
+    version: SCRIPT_VERSION,
   };
 }
 

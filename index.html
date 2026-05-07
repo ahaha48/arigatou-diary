@@ -569,6 +569,22 @@
       color: var(--mint-dark);
     }
 
+    .sheet-message {
+      display: none;
+      padding: 9px 10px;
+      border: 1px dashed rgba(232, 121, 142, 0.4);
+      border-radius: var(--radius);
+      background: rgba(255, 247, 250, 0.86);
+      color: #9d3f55;
+      font-size: 13px;
+      line-height: 1.55;
+      overflow-wrap: anywhere;
+    }
+
+    .sheet-message.show {
+      display: block;
+    }
+
     .history-list {
       display: grid;
       gap: 10px;
@@ -876,6 +892,7 @@
               <input id="sheetEndpoint" type="url" placeholder="https://script.google.com/macros/s/.../exec">
             </div>
             <span class="sheet-status" id="sheetStatus">未設定</span>
+            <p class="sheet-message" id="sheetMessage"></p>
             <div class="toolbar">
               <button class="secondary-button" id="saveSheetSettings" type="button">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -884,6 +901,12 @@
                   <path d="M7 3v5h8"></path>
                 </svg>
                 設定保存
+              </button>
+              <button class="secondary-button" id="testSheet" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M20 6 9 17l-5-5"></path>
+                </svg>
+                接続テスト
               </button>
               <button class="primary-button" id="syncSheet" type="button">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -956,7 +979,9 @@
     const writerName = document.querySelector("#writerName");
     const sheetEndpoint = document.querySelector("#sheetEndpoint");
     const sheetStatus = document.querySelector("#sheetStatus");
+    const sheetMessage = document.querySelector("#sheetMessage");
     const saveSheetSettingsButton = document.querySelector("#saveSheetSettings");
+    const testSheetButton = document.querySelector("#testSheet");
     const syncSheetButton = document.querySelector("#syncSheet");
 
     const stats = {
@@ -998,6 +1023,7 @@
       localStorage.setItem(SHEET_ENDPOINT_KEY, endpoint);
       localStorage.setItem(WRITER_NAME_KEY, name);
       updateSheetStatus();
+      clearSheetMessage();
       showToast(endpoint ? "シート連携を保存しました。" : "シート連携を解除しました。");
     }
 
@@ -1017,6 +1043,16 @@
       const configured = Boolean(getSheetEndpoint());
       sheetStatus.classList.toggle("connected", configured);
       sheetStatus.textContent = message || (configured ? "連携中" : "未設定");
+    }
+
+    function showSheetMessage(message) {
+      sheetMessage.textContent = message;
+      sheetMessage.classList.add("show");
+    }
+
+    function clearSheetMessage() {
+      sheetMessage.textContent = "";
+      sheetMessage.classList.remove("show");
     }
 
     function toDateKey(date) {
@@ -1191,12 +1227,52 @@
       await syncDayToSheet(entries, { notify: true });
     }
 
+    async function testSheetConnection() {
+      const endpoint = normalizeSheetEndpoint(getSheetEndpoint());
+
+      if (!endpoint) {
+        showToast("WebアプリURLを設定してください。");
+        updateSheetStatus("未設定");
+        showSheetMessage("Apps ScriptのWebアプリURLを貼ってから、設定保存を押してください。");
+        sheetEndpoint.focus();
+        return;
+      }
+
+      if (isTestDeploymentUrl(endpoint)) {
+        updateSheetStatus("URL確認");
+        showSheetMessage("URLが /dev で終わっています。デプロイ後に発行される /exec のWebアプリURLを使ってください。");
+        showToast("WebアプリURLは /exec のURLを使ってください。");
+        return;
+      }
+
+      updateSheetStatus("確認中");
+      clearSheetMessage();
+      testSheetButton.disabled = true;
+
+      try {
+        const result = await sendSheetPing(endpoint);
+        if (!result || !result.ok) {
+          throw new Error(result && result.error ? result.error : "Apps ScriptからOKが返りませんでした。");
+        }
+        updateSheetStatus("接続OK");
+        showSheetMessage(result.message || "Apps Scriptに接続できました。次に「今日を送信」を押してください。");
+        showToast("シート連携の接続を確認しました。");
+      } catch (error) {
+        updateSheetStatus("接続エラー");
+        showSheetMessage(formatSheetError(error));
+        showToast("シート連携の接続に失敗しました。");
+      } finally {
+        testSheetButton.disabled = false;
+      }
+    }
+
     async function syncDayToSheet(entries, options = {}) {
       const endpoint = normalizeSheetEndpoint(getSheetEndpoint());
       if (!endpoint) return false;
 
       if (isTestDeploymentUrl(endpoint)) {
         updateSheetStatus("URL確認");
+        showSheetMessage("URLが /dev で終わっています。デプロイ後に発行される /exec のWebアプリURLを使ってください。");
         if (options.notify) {
           showToast("WebアプリURLは /exec のURLを使ってください。");
         }
@@ -1217,6 +1293,7 @@
       };
 
       updateSheetStatus("送信中");
+      clearSheetMessage();
       syncSheetButton.disabled = true;
 
       try {
@@ -1225,6 +1302,7 @@
           throw new Error(result && result.error ? result.error : "Apps ScriptからOKが返りませんでした。");
         }
         updateSheetStatus(result.row ? `送信OK ${result.row}行目` : "送信OK");
+        showSheetMessage(result.row ? `スプレッドシートの${result.row}行目に追加しました。` : "スプレッドシートに追加しました。");
         if (options.notify) {
           showToast("スプレッドシートへ送信しました。");
         }
@@ -1232,6 +1310,7 @@
       } catch (error) {
         console.warn("Could not sync to spreadsheet", error);
         updateSheetStatus("送信エラー");
+        showSheetMessage(formatSheetError(error));
         if (options.notify) {
           showToast("スプレッドシートへ送信できませんでした。");
         }
@@ -1241,11 +1320,21 @@
       }
     }
 
+    function sendSheetPing(endpoint) {
+      return sendSheetJsonp(endpoint);
+    }
+
     function sendSheetPayload(endpoint, payload) {
+      return sendSheetJsonp(endpoint, payload);
+    }
+
+    function sendSheetJsonp(endpoint, payload) {
       const callbackName = `arigatouDiaryCallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
       const url = new URL(endpoint);
       url.searchParams.set("callback", callbackName);
-      url.searchParams.set("payload", JSON.stringify(payload));
+      if (payload) {
+        url.searchParams.set("payload", JSON.stringify(payload));
+      }
 
       return new Promise((resolve, reject) => {
         const script = document.createElement("script");
@@ -1273,6 +1362,28 @@
         script.src = url.toString();
         document.body.append(script);
       });
+    }
+
+    function formatSheetError(error) {
+      const message = error && error.message ? error.message : String(error);
+
+      if (message.includes("日付またはありがとう内容")) {
+        return "Apps Scriptには接続できましたが、送信する日記内容が空でした。ありがとうを入力してから送信してください。";
+      }
+
+      if (message.includes("スプレッドシートからApps Script")) {
+        return "Apps Scriptがスプレッドシートに紐づいていません。スプレッドシート画面から「拡張機能 > Apps Script」を開いてコードを入れるか、SPREADSHEET_IDを設定してください。";
+      }
+
+      if (message.includes("応答がありません")) {
+        return "Apps Scriptから応答がありません。WebアプリURLが /exec で終わっているか、アクセスできるユーザーが「全員」になっているか、新しいバージョンで再デプロイしたかを確認してください。";
+      }
+
+      if (message.includes("接続できません")) {
+        return "Apps Scriptに接続できません。WebアプリURLが正しいか、/exec のURLを貼っているか確認してください。";
+      }
+
+      return `Apps Scriptからのエラー: ${message}`;
     }
 
     function addEntry() {
@@ -1484,6 +1595,7 @@
     exportButton.addEventListener("click", exportData);
     importFile.addEventListener("change", importData);
     saveSheetSettingsButton.addEventListener("click", saveSheetSettings);
+    testSheetButton.addEventListener("click", testSheetConnection);
     syncSheetButton.addEventListener("click", syncCurrentDayToSheet);
     entryDate.addEventListener("change", (event) => {
       if (event.target.value) {

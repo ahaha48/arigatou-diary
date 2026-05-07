@@ -1,0 +1,1460 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fff6f9">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="ありがとう日記">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <title>ありがとう日記</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #49373d;
+      --muted: #8a7278;
+      --line: #f0cbd5;
+      --panel: #fffafd;
+      --soft: #fff2ca;
+      --soft-2: #eaf8f1;
+      --mint: #62baaa;
+      --mint-dark: #327d73;
+      --rose: #e8798e;
+      --rose-dark: #b54d64;
+      --gold: #f0b94f;
+      --lavender: #bba1e8;
+      --shadow: 0 18px 42px rgba(181, 77, 100, 0.16);
+      --radius: 8px;
+      font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", Meiryo, system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        linear-gradient(140deg, rgba(255, 246, 249, 0.97), rgba(240, 250, 244, 0.94) 50%, rgba(255, 247, 221, 0.95)),
+        url("data:image/svg+xml,%3Csvg width='116' height='116' viewBox='0 0 116 116' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M25 28c-7-9-20 1-8 13l8 8 8-8c12-12-1-22-8-13z' fill='%23f5b7c2' fill-opacity='.28' stroke='%23e8798e' stroke-opacity='.28'/%3E%3Cpath d='M79 25l3 7 7 2-6 4 1 8-6-4-7 3 2-8-6-4 8-1z' fill='%23f0b94f' fill-opacity='.22' stroke='%23d69f36' stroke-opacity='.24'/%3E%3Cpath d='M35 83c8-11 19-11 27 0' stroke='%2362baaa' stroke-opacity='.24'/%3E%3Cpath d='M82 80c0 5-4 9-9 9s-9-4-9-9 4-9 9-9 9 4 9 9z' fill='%23bba1e8' fill-opacity='.16' stroke='%23bba1e8' stroke-opacity='.22'/%3E%3C/g%3E%3C/svg%3E");
+      background-attachment: fixed;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.18) 0 12px, transparent 12px 24px);
+      mix-blend-mode: soft-light;
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .app-shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: max(26px, env(safe-area-inset-top)) 0 max(42px, env(safe-area-inset-bottom));
+      position: relative;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 0 22px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, #ffd8e2, #fff1b9 72%);
+      border: 1px solid rgba(232, 121, 142, 0.34);
+      box-shadow: 0 8px 18px rgba(181, 77, 100, 0.16), inset 0 -9px 18px rgba(232, 121, 142, 0.12);
+      color: var(--rose-dark);
+      flex: 0 0 auto;
+      transform: rotate(-3deg);
+    }
+
+    .brand-mark svg {
+      width: 25px;
+      height: 25px;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(28px, 5vw, 48px);
+      line-height: 1.05;
+      letter-spacing: 0;
+      color: var(--rose-dark);
+      font-weight: 900;
+      text-shadow: 0 2px 0 rgba(255, 255, 255, 0.86);
+    }
+
+    .date-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 42px;
+      border: 1px solid rgba(232, 121, 142, 0.28);
+      background: rgba(255, 255, 255, 0.86);
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      color: var(--muted);
+      box-shadow: 0 8px 18px rgba(181, 77, 100, 0.08);
+      white-space: nowrap;
+    }
+
+    .date-chip svg {
+      width: 18px;
+      height: 18px;
+      color: var(--mint-dark);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .panel {
+      background: rgba(255, 250, 253, 0.92);
+      border: 1px solid rgba(240, 203, 213, 0.95);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .entry-panel {
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(rgba(255, 250, 253, 0.94), rgba(255, 250, 253, 0.94)),
+        repeating-linear-gradient(0deg, transparent 0 30px, rgba(232, 121, 142, 0.08) 30px 31px);
+    }
+
+    .entry-visual {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 190px;
+      gap: 18px;
+      align-items: center;
+      min-height: 152px;
+      padding: 22px;
+      background:
+        url("data:image/svg+xml,%3Csvg width='84' height='84' viewBox='0 0 84 84' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23b54d64' stroke-opacity='.16' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17 20c-5-6-13 0-5 9l5 5 5-5c8-9 0-15-5-9z'/%3E%3Cpath d='M59 52l2 5 5 1-4 3 1 5-4-3-5 2 1-5-4-3 5-1z'/%3E%3C/g%3E%3C/svg%3E"),
+        linear-gradient(120deg, rgba(255, 228, 236, 0.95), rgba(236, 248, 241, 0.94) 58%, rgba(255, 242, 202, 0.9));
+      border-bottom: 1px solid var(--line);
+      overflow: hidden;
+    }
+
+    .entry-visual::before {
+      content: "";
+      position: absolute;
+      width: 96px;
+      height: 22px;
+      top: 14px;
+      right: 26px;
+      border: 1px solid rgba(232, 121, 142, 0.18);
+      background: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.72) 0 10px, rgba(255, 211, 221, 0.72) 10px 20px);
+      transform: rotate(4deg);
+      box-shadow: 0 8px 14px rgba(181, 77, 100, 0.1);
+    }
+
+    .entry-visual h2 {
+      max-width: 640px;
+      font-size: clamp(22px, 3.4vw, 34px);
+      line-height: 1.25;
+      letter-spacing: 0;
+      color: #773e50;
+      font-weight: 900;
+      text-shadow: 0 2px 0 rgba(255, 255, 255, 0.72);
+      position: relative;
+      z-index: 1;
+    }
+
+    .entry-visual p {
+      margin-top: 10px;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 15px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .sun-window {
+      position: relative;
+      height: 108px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      background:
+        url("data:image/svg+xml,%3Csvg width='190' height='108' viewBox='0 0 190 108' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='36' y='18' width='104' height='72' rx='8' fill='%23fffdf7' stroke='%23f0cbd5'/%3E%3Cpath d='M55 39h66M55 55h74M55 71h52' stroke='%23e8798e' stroke-opacity='.34'/%3E%3Cpath d='M119 23h25v28l-12-8-13 8z' fill='%23fff2ca' stroke='%23f0b94f' stroke-opacity='.6'/%3E%3Cpath d='M45 32c-5-6-14 1-5 10l5 5 5-5c9-9 0-16-5-10z' fill='%23e8798e' fill-opacity='.72'/%3E%3Ccircle cx='151' cy='72' r='8' fill='%2362baaa' fill-opacity='.5'/%3E%3Cpath d='M151 64v16M143 72h16' stroke='%23327d73' stroke-opacity='.42'/%3E%3C/g%3E%3C/svg%3E") center / cover no-repeat,
+        #fff8ef;
+      border: 1px solid rgba(232, 121, 142, 0.24);
+      box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.48), 0 10px 22px rgba(181, 77, 100, 0.12);
+    }
+
+    .sun-window::before {
+      content: "";
+      position: absolute;
+      width: 64px;
+      height: 14px;
+      left: 50%;
+      top: 8px;
+      border: 1px solid rgba(98, 186, 170, 0.2);
+      background: rgba(234, 248, 241, 0.78);
+      transform: translateX(-50%) rotate(-3deg);
+      box-shadow: 0 4px 10px rgba(50, 125, 115, 0.1);
+    }
+
+    .sun-window::after {
+      content: "";
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 10px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(232, 121, 142, 0.14);
+    }
+
+    .entry-body {
+      padding: 22px;
+      background:
+        linear-gradient(rgba(255, 250, 253, 0.92), rgba(255, 250, 253, 0.92)),
+        repeating-linear-gradient(0deg, transparent 0 32px, rgba(240, 203, 213, 0.28) 32px 33px);
+    }
+
+    .entry-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .entry-row {
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr) 36px;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .entry-number {
+      display: grid;
+      place-items: center;
+      height: 42px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(98, 186, 170, 0.28);
+      background: linear-gradient(135deg, #eaf8f1, #fffdf7);
+      color: var(--mint-dark);
+      font-weight: 900;
+      box-shadow: 0 5px 12px rgba(50, 125, 115, 0.09);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 88px;
+      resize: vertical;
+      border: 1px solid rgba(240, 203, 213, 0.95);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(rgba(255, 253, 247, 0.92), rgba(255, 253, 247, 0.92)),
+        repeating-linear-gradient(0deg, transparent 0 29px, rgba(232, 121, 142, 0.16) 29px 30px);
+      color: var(--ink);
+      padding: 13px 14px;
+      line-height: 1.6;
+      outline: none;
+      transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+      box-shadow: 0 4px 10px rgba(181, 77, 100, 0.06);
+    }
+
+    textarea::placeholder {
+      color: #b5969f;
+    }
+
+    textarea:focus {
+      border-color: var(--rose);
+      box-shadow: 0 0 0 3px rgba(232, 121, 142, 0.16), 0 8px 18px rgba(181, 77, 100, 0.11);
+      background:
+        linear-gradient(rgba(255, 255, 252, 0.98), rgba(255, 255, 252, 0.98)),
+        repeating-linear-gradient(0deg, transparent 0 29px, rgba(232, 121, 142, 0.18) 29px 30px);
+    }
+
+    .icon-button {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      align-self: start;
+      border-radius: var(--radius);
+      border: 1px solid rgba(240, 203, 213, 0.82);
+      background: #fff7fa;
+      color: var(--rose-dark);
+      transition: transform 140ms ease, background 140ms ease, color 140ms ease;
+    }
+
+    .icon-button:hover {
+      transform: translateY(-1px);
+      background: #ffe8ef;
+      color: #9d3f55;
+    }
+
+    .icon-button:disabled {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .icon-button svg,
+    .primary-button svg,
+    .secondary-button svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .action-left,
+    .action-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .primary-button,
+    .secondary-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      font-weight: 700;
+      white-space: nowrap;
+      transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .primary-button {
+      color: #fff;
+      background: linear-gradient(135deg, var(--rose), #f0b94f);
+      box-shadow: 0 10px 24px rgba(232, 121, 142, 0.28);
+    }
+
+    .primary-button:hover {
+      transform: translateY(-1px);
+      background: linear-gradient(135deg, var(--rose-dark), #e4a534);
+    }
+
+    .secondary-button {
+      border: 1px solid rgba(240, 203, 213, 0.95);
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: 0 4px 12px rgba(181, 77, 100, 0.05);
+    }
+
+    .secondary-button:hover {
+      transform: translateY(-1px);
+      background: #fff7fa;
+      box-shadow: 0 8px 20px rgba(181, 77, 100, 0.12);
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 6px 10px;
+      border-radius: var(--radius);
+      background: #eaf8f1;
+      color: var(--mint-dark);
+      font-size: 14px;
+      font-weight: 900;
+      border: 1px solid rgba(98, 186, 170, 0.22);
+    }
+
+    .status.needs-work {
+      background: #fff2ca;
+      color: #9a681c;
+      border-color: rgba(240, 185, 79, 0.32);
+    }
+
+    .side-stack {
+      display: grid;
+      gap: 20px;
+    }
+
+    .card {
+      padding: 18px;
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .card-title h2 {
+      font-size: 18px;
+      letter-spacing: 0;
+      color: #773e50;
+      font-weight: 900;
+    }
+
+    .mini-icon {
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(232, 121, 142, 0.18);
+      background: #ffe6ee;
+      color: var(--rose-dark);
+    }
+
+    .mini-icon svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .stat {
+      min-height: 86px;
+      padding: 12px;
+      border: 1px solid rgba(240, 203, 213, 0.9);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 247, 250, 0.92));
+      box-shadow: inset 0 3px 0 rgba(255, 226, 234, 0.86);
+    }
+
+    .stat-value {
+      display: block;
+      font-size: 26px;
+      line-height: 1.1;
+      font-weight: 800;
+      color: var(--rose-dark);
+    }
+
+    .stat-label {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .date-picker {
+      display: grid;
+      gap: 8px;
+    }
+
+    .date-picker label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    input[type="date"] {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid rgba(240, 203, 213, 0.95);
+      border-radius: var(--radius);
+      background: #fffdf7;
+      color: var(--ink);
+      padding: 8px 10px;
+      outline: none;
+    }
+
+    input[type="date"]:focus {
+      border-color: var(--rose);
+      box-shadow: 0 0 0 3px rgba(232, 121, 142, 0.14);
+    }
+
+    .sheet-form {
+      display: grid;
+      gap: 10px;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    input[type="text"],
+    input[type="url"] {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid rgba(240, 203, 213, 0.95);
+      border-radius: var(--radius);
+      background: #fffdf7;
+      color: var(--ink);
+      padding: 8px 10px;
+      outline: none;
+    }
+
+    input[type="text"]:focus,
+    input[type="url"]:focus {
+      border-color: var(--rose);
+      box-shadow: 0 0 0 3px rgba(232, 121, 142, 0.14);
+    }
+
+    .sheet-status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      width: fit-content;
+      padding: 5px 9px;
+      border: 1px solid rgba(240, 185, 79, 0.32);
+      border-radius: var(--radius);
+      background: #fff2ca;
+      color: #9a681c;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .sheet-status.connected {
+      border-color: rgba(98, 186, 170, 0.22);
+      background: #eaf8f1;
+      color: var(--mint-dark);
+    }
+
+    .history-list {
+      display: grid;
+      gap: 10px;
+      max-height: 390px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .history-item {
+      display: grid;
+      gap: 7px;
+      width: 100%;
+      text-align: left;
+      padding: 12px;
+      border: 1px solid rgba(240, 203, 213, 0.9);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.84);
+      color: var(--ink);
+      transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+    }
+
+    .history-item:hover,
+    .history-item.active {
+      border-color: rgba(232, 121, 142, 0.54);
+      box-shadow: 0 8px 18px rgba(181, 77, 100, 0.12);
+      transform: translateY(-1px);
+      background: #fff7fa;
+    }
+
+    .history-date {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-weight: 800;
+      color: var(--rose-dark);
+    }
+
+    .history-count {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .history-preview {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+      display: -webkit-box;
+      overflow: hidden;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .empty {
+      color: var(--muted);
+      line-height: 1.7;
+      padding: 12px;
+      border: 1px dashed rgba(232, 121, 142, 0.36);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.68);
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .file-input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+    }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 10;
+      max-width: min(360px, calc(100% - 36px));
+      padding: 12px 14px;
+      border-radius: var(--radius);
+      background: #773e50;
+      color: #fff;
+      box-shadow: 0 12px 28px rgba(181, 77, 100, 0.25);
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 180ms ease, transform 180ms ease;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 880px) {
+      .layout,
+      .entry-visual {
+        grid-template-columns: 1fr;
+      }
+
+      .sun-window {
+        height: 88px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .app-shell {
+        width: min(100% - 20px, 1180px);
+        padding-top: max(14px, env(safe-area-inset-top));
+      }
+
+      .topbar,
+      .actions {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .date-chip,
+      .action-left,
+      .action-right,
+      .primary-button,
+      .secondary-button {
+        width: 100%;
+      }
+
+      .entry-visual,
+      .entry-body,
+      .card {
+        padding: 16px;
+      }
+
+      .entry-row {
+        grid-template-columns: 34px minmax(0, 1fr) 32px;
+        gap: 8px;
+      }
+
+      .entry-number {
+        width: 34px;
+        height: 38px;
+      }
+
+      .icon-button {
+        width: 32px;
+        height: 32px;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v3"></path>
+            <path d="M5.6 5.6l2.1 2.1"></path>
+            <path d="M3 12h3"></path>
+            <path d="M18 12h3"></path>
+            <path d="M16.3 7.7l2.1-2.1"></path>
+            <path d="M7 16.5c2.8 2.6 7.2 2.6 10 0"></path>
+            <path d="M8.5 12a3.5 3.5 0 0 1 7 0"></path>
+          </svg>
+        </div>
+        <h1>ありがとう日記</h1>
+      </div>
+      <div class="date-chip" id="todayChip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M8 2v4"></path>
+          <path d="M16 2v4"></path>
+          <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+          <path d="M3 10h18"></path>
+        </svg>
+        <span></span>
+      </div>
+    </header>
+
+    <section class="layout">
+      <article class="panel entry-panel">
+        <div class="entry-visual">
+          <div>
+            <h2 id="pageTitle">今日のありがとうを3つ集める</h2>
+            <p id="pageLead">小さなうれしいことを、そっと日記にしまっておきます。</p>
+          </div>
+          <div class="sun-window" aria-hidden="true"></div>
+        </div>
+
+        <div class="entry-body">
+          <div class="entry-list" id="entryList"></div>
+          <div class="actions">
+            <div class="action-left">
+              <button class="secondary-button" id="addEntry" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 5v14"></path>
+                  <path d="M5 12h14"></path>
+                </svg>
+                追加
+              </button>
+              <span class="status needs-work" id="statusText">あと3つ</span>
+            </div>
+            <div class="action-right">
+              <button class="secondary-button" id="clearDay" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M3 6h18"></path>
+                  <path d="M8 6V4h8v2"></path>
+                  <path d="M19 6l-1 14H6L5 6"></path>
+                  <path d="M10 11v5"></path>
+                  <path d="M14 11v5"></path>
+                </svg>
+                削除
+              </button>
+              <button class="primary-button" id="saveDay" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                  <path d="M17 21v-8H7v8"></path>
+                  <path d="M7 3v5h8"></path>
+                </svg>
+                保存
+              </button>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <aside class="side-stack">
+        <section class="panel card" aria-labelledby="statsTitle">
+          <div class="card-title">
+            <h2 id="statsTitle">記録</h2>
+            <span class="mini-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 3v18h18"></path>
+                <path d="M7 14l3-3 4 4 5-8"></path>
+              </svg>
+            </span>
+          </div>
+          <div class="stats-grid">
+            <div class="stat">
+              <span class="stat-value" id="streakCount">0</span>
+              <span class="stat-label">連続日数</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value" id="monthCount">0</span>
+              <span class="stat-label">今月の達成</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value" id="totalDays">0</span>
+              <span class="stat-label">記録した日</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value" id="totalThanks">0</span>
+              <span class="stat-label">ありがとう</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel card" aria-labelledby="selectTitle">
+          <div class="card-title">
+            <h2 id="selectTitle">日付</h2>
+            <span class="mini-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8 2v4"></path>
+                <path d="M16 2v4"></path>
+                <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                <path d="M3 10h18"></path>
+              </svg>
+            </span>
+          </div>
+          <div class="date-picker">
+            <label for="entryDate">編集する日</label>
+            <input id="entryDate" type="date">
+          </div>
+        </section>
+
+        <section class="panel card" aria-labelledby="sheetTitle">
+          <div class="card-title">
+            <h2 id="sheetTitle">シート連携</h2>
+            <span class="mini-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <path d="M14 2v6h6"></path>
+                <path d="M8 13h8"></path>
+                <path d="M8 17h8"></path>
+                <path d="M8 9h2"></path>
+              </svg>
+            </span>
+          </div>
+          <div class="sheet-form">
+            <div class="field">
+              <label for="writerName">お名前</label>
+              <input id="writerName" type="text" placeholder="例: のりこ">
+            </div>
+            <div class="field">
+              <label for="sheetEndpoint">WebアプリURL</label>
+              <input id="sheetEndpoint" type="url" placeholder="https://script.google.com/macros/s/.../exec">
+            </div>
+            <span class="sheet-status" id="sheetStatus">未設定</span>
+            <div class="toolbar">
+              <button class="secondary-button" id="saveSheetSettings" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                  <path d="M17 21v-8H7v8"></path>
+                  <path d="M7 3v5h8"></path>
+                </svg>
+                設定保存
+              </button>
+              <button class="primary-button" id="syncSheet" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <path d="M17 8l-5-5-5 5"></path>
+                  <path d="M12 3v12"></path>
+                </svg>
+                今日を送信
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel card" aria-labelledby="historyTitle">
+          <div class="card-title">
+            <h2 id="historyTitle">履歴</h2>
+            <span class="mini-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              </svg>
+            </span>
+          </div>
+          <div class="history-list" id="historyList"></div>
+          <div class="toolbar">
+            <button class="secondary-button" id="exportData" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <path d="M7 10l5 5 5-5"></path>
+                <path d="M12 15V3"></path>
+              </svg>
+              書き出し
+            </button>
+            <label class="secondary-button" for="importFile">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <path d="M17 8l-5-5-5 5"></path>
+                <path d="M12 3v12"></path>
+              </svg>
+              読み込み
+            </label>
+            <input class="file-input" id="importFile" type="file" accept="application/json,.json">
+          </div>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const STORAGE_KEY = "arigatou-diary-v1";
+    const SHEET_ENDPOINT_KEY = "arigatou-diary-sheet-endpoint-v1";
+    const WRITER_NAME_KEY = "arigatou-diary-writer-name-v1";
+    const MIN_ENTRIES = 3;
+
+    const entryList = document.querySelector("#entryList");
+    const entryDate = document.querySelector("#entryDate");
+    const addEntryButton = document.querySelector("#addEntry");
+    const saveButton = document.querySelector("#saveDay");
+    const clearButton = document.querySelector("#clearDay");
+    const statusText = document.querySelector("#statusText");
+    const historyList = document.querySelector("#historyList");
+    const toast = document.querySelector("#toast");
+    const todayChip = document.querySelector("#todayChip span");
+    const pageTitle = document.querySelector("#pageTitle");
+    const pageLead = document.querySelector("#pageLead");
+    const exportButton = document.querySelector("#exportData");
+    const importFile = document.querySelector("#importFile");
+    const writerName = document.querySelector("#writerName");
+    const sheetEndpoint = document.querySelector("#sheetEndpoint");
+    const sheetStatus = document.querySelector("#sheetStatus");
+    const saveSheetSettingsButton = document.querySelector("#saveSheetSettings");
+    const syncSheetButton = document.querySelector("#syncSheet");
+
+    const stats = {
+      streakCount: document.querySelector("#streakCount"),
+      monthCount: document.querySelector("#monthCount"),
+      totalDays: document.querySelector("#totalDays"),
+      totalThanks: document.querySelector("#totalThanks"),
+    };
+
+    let state = loadState();
+    let currentDate = toDateKey(new Date());
+    let toastTimer = null;
+
+    function loadState() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (parsed && typeof parsed === "object" && parsed.days) {
+          return { days: parsed.days };
+        }
+      } catch (error) {
+        console.warn("Could not load diary data", error);
+      }
+      return { days: {} };
+    }
+
+    function persistState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function loadSheetSettings() {
+      writerName.value = localStorage.getItem(WRITER_NAME_KEY) || "";
+      sheetEndpoint.value = localStorage.getItem(SHEET_ENDPOINT_KEY) || "";
+      updateSheetStatus();
+    }
+
+    function saveSheetSettings() {
+      const endpoint = sheetEndpoint.value.trim();
+      const name = writerName.value.trim();
+      localStorage.setItem(SHEET_ENDPOINT_KEY, endpoint);
+      localStorage.setItem(WRITER_NAME_KEY, name);
+      updateSheetStatus();
+      showToast(endpoint ? "シート連携を保存しました。" : "シート連携を解除しました。");
+    }
+
+    function getSheetEndpoint() {
+      return sheetEndpoint.value.trim() || localStorage.getItem(SHEET_ENDPOINT_KEY) || "";
+    }
+
+    function updateSheetStatus(message) {
+      const configured = Boolean(getSheetEndpoint());
+      sheetStatus.classList.toggle("connected", configured);
+      sheetStatus.textContent = message || (configured ? "連携中" : "未設定");
+    }
+
+    function toDateKey(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function parseDateKey(dateKey) {
+      const [year, month, day] = dateKey.split("-").map(Number);
+      return new Date(year, month - 1, day);
+    }
+
+    function formatDate(dateKey, style = "long") {
+      const date = parseDateKey(dateKey);
+      const options = style === "short"
+        ? { month: "numeric", day: "numeric", weekday: "short" }
+        : { year: "numeric", month: "long", day: "numeric", weekday: "long" };
+      return new Intl.DateTimeFormat("ja-JP", options).format(date);
+    }
+
+    function getSavedEntries(dateKey) {
+      return Array.isArray(state.days[dateKey]) ? state.days[dateKey] : [];
+    }
+
+    function normalizeEntries(entries) {
+      return entries.map((entry) => entry.trim()).filter(Boolean);
+    }
+
+    function getCurrentEntries() {
+      return Array.from(entryList.querySelectorAll("textarea")).map((textarea) => textarea.value);
+    }
+
+    function ensureMinimumRows(entries) {
+      const rows = [...entries];
+      while (rows.length < MIN_ENTRIES) {
+        rows.push("");
+      }
+      return rows;
+    }
+
+    function renderEntries(dateKey) {
+      const saved = getSavedEntries(dateKey);
+      const rows = ensureMinimumRows(saved);
+      entryList.innerHTML = "";
+
+      rows.forEach((value, index) => {
+        const row = document.createElement("div");
+        row.className = "entry-row";
+
+        const number = document.createElement("div");
+        number.className = "entry-number";
+        number.textContent = index + 1;
+
+        const textarea = document.createElement("textarea");
+        textarea.value = value;
+        textarea.placeholder = placeholderFor(index);
+        textarea.setAttribute("aria-label", `${index + 1}つ目のありがとう`);
+        textarea.addEventListener("input", updateStatus);
+
+        const removeButton = document.createElement("button");
+        removeButton.className = "icon-button";
+        removeButton.type = "button";
+        removeButton.title = "この欄を削除";
+        removeButton.setAttribute("aria-label", "この欄を削除");
+        removeButton.disabled = rows.length <= MIN_ENTRIES;
+        removeButton.innerHTML = `
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 6 6 18"></path>
+            <path d="m6 6 12 12"></path>
+          </svg>
+        `;
+        removeButton.addEventListener("click", () => {
+          row.remove();
+          renumberRows();
+          updateStatus();
+        });
+
+        row.append(number, textarea, removeButton);
+        entryList.append(row);
+      });
+
+      updateHeading(dateKey);
+      updateStatus();
+    }
+
+    function placeholderFor(index) {
+      const examples = [
+        "例: 温かいお茶がおいしかった",
+        "例: やさしい言葉をもらえた",
+        "例: きれいな空を見られた",
+        "例: 今日も少し進められた",
+      ];
+      return examples[index % examples.length];
+    }
+
+    function renumberRows() {
+      Array.from(entryList.children).forEach((row, index) => {
+        row.querySelector(".entry-number").textContent = index + 1;
+        row.querySelector("textarea").setAttribute("aria-label", `${index + 1}つ目のありがとう`);
+      });
+      const removeButtons = entryList.querySelectorAll(".icon-button");
+      removeButtons.forEach((button) => {
+        button.disabled = removeButtons.length <= MIN_ENTRIES;
+      });
+    }
+
+    function updateHeading(dateKey) {
+      const today = toDateKey(new Date());
+      todayChip.textContent = formatDate(today);
+      entryDate.value = dateKey;
+
+      if (dateKey === today) {
+        pageTitle.textContent = "今日のありがとうを3つ集める";
+        pageLead.textContent = "小さなうれしいことを、そっと日記にしまっておきます。";
+        return;
+      }
+
+      pageTitle.textContent = `${formatDate(dateKey, "short")} のありがとう`;
+      pageLead.textContent = "過去の日付も編集できます。保存すると履歴と記録に反映されます。";
+    }
+
+    function updateStatus() {
+      const completedCount = normalizeEntries(getCurrentEntries()).length;
+      const remaining = Math.max(MIN_ENTRIES - completedCount, 0);
+      statusText.classList.toggle("needs-work", remaining > 0);
+      statusText.textContent = remaining > 0 ? `あと${remaining}つ` : "3つそろいました";
+    }
+
+    function saveCurrentDay(showMessage = true, syncSheet = true) {
+      const entries = normalizeEntries(getCurrentEntries());
+
+      if (entries.length === 0) {
+        delete state.days[currentDate];
+      } else {
+        state.days[currentDate] = entries;
+      }
+
+      persistState();
+      renderHistory();
+      renderStats();
+      updateStatus();
+
+      if (showMessage) {
+        const message = entries.length >= MIN_ENTRIES
+          ? "保存しました。3つそろいました。"
+          : `保存しました。あと${MIN_ENTRIES - entries.length}つで達成です。`;
+        showToast(message);
+      }
+
+      if (syncSheet && entries.length > 0 && getSheetEndpoint()) {
+        syncDayToSheet(entries, { notify: showMessage });
+      }
+    }
+
+    async function syncCurrentDayToSheet() {
+      const entries = normalizeEntries(getCurrentEntries());
+      if (!entries.length) {
+        showToast("送信できる内容がありません。");
+        return;
+      }
+
+      if (!getSheetEndpoint()) {
+        showToast("WebアプリURLを設定してください。");
+        updateSheetStatus("未設定");
+        sheetEndpoint.focus();
+        return;
+      }
+
+      saveCurrentDay(false, false);
+      await syncDayToSheet(entries, { notify: true });
+    }
+
+    async function syncDayToSheet(entries, options = {}) {
+      const endpoint = getSheetEndpoint();
+      if (!endpoint) return false;
+
+      const payload = {
+        app: "ありがとう日記",
+        source: window.location.href,
+        date: currentDate,
+        dateLabel: formatDate(currentDate),
+        writer: writerName.value.trim(),
+        savedAt: new Date().toISOString(),
+        completed: entries.length >= MIN_ENTRIES,
+        count: entries.length,
+        entries,
+        userAgent: navigator.userAgent,
+      };
+
+      updateSheetStatus("送信中");
+      syncSheetButton.disabled = true;
+
+      try {
+        await fetch(endpoint, {
+          method: "POST",
+          mode: "no-cors",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8",
+          },
+          body: JSON.stringify(payload),
+        });
+        updateSheetStatus("送信しました");
+        if (options.notify) {
+          showToast("スプレッドシートへ送信しました。");
+        }
+        return true;
+      } catch (error) {
+        console.warn("Could not sync to spreadsheet", error);
+        updateSheetStatus("送信エラー");
+        if (options.notify) {
+          showToast("スプレッドシートへ送信できませんでした。");
+        }
+        return false;
+      } finally {
+        syncSheetButton.disabled = false;
+      }
+    }
+
+    function addEntry() {
+      const rows = getCurrentEntries();
+      rows.push("");
+      renderEntriesFromValues(rows);
+      const textareas = entryList.querySelectorAll("textarea");
+      textareas[textareas.length - 1].focus();
+    }
+
+    function renderEntriesFromValues(values) {
+      const previousCurrentDate = currentDate;
+      const temporaryState = [...values];
+      entryList.innerHTML = "";
+      temporaryState.forEach((value, index) => {
+        const row = document.createElement("div");
+        row.className = "entry-row";
+
+        const number = document.createElement("div");
+        number.className = "entry-number";
+        number.textContent = index + 1;
+
+        const textarea = document.createElement("textarea");
+        textarea.value = value;
+        textarea.placeholder = placeholderFor(index);
+        textarea.setAttribute("aria-label", `${index + 1}つ目のありがとう`);
+        textarea.addEventListener("input", updateStatus);
+
+        const removeButton = document.createElement("button");
+        removeButton.className = "icon-button";
+        removeButton.type = "button";
+        removeButton.title = "この欄を削除";
+        removeButton.setAttribute("aria-label", "この欄を削除");
+        removeButton.innerHTML = `
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 6 6 18"></path>
+            <path d="m6 6 12 12"></path>
+          </svg>
+        `;
+        removeButton.addEventListener("click", () => {
+          row.remove();
+          renumberRows();
+          updateStatus();
+        });
+
+        row.append(number, textarea, removeButton);
+        entryList.append(row);
+      });
+      currentDate = previousCurrentDate;
+      renumberRows();
+      updateStatus();
+    }
+
+    function clearCurrentDay() {
+      const hasContent = normalizeEntries(getCurrentEntries()).length > 0 || getSavedEntries(currentDate).length > 0;
+      if (!hasContent) {
+        showToast("削除できる内容はありません。");
+        return;
+      }
+
+      const ok = confirm(`${formatDate(currentDate)} の日記を削除しますか。`);
+      if (!ok) return;
+
+      delete state.days[currentDate];
+      persistState();
+      renderEntries(currentDate);
+      renderHistory();
+      renderStats();
+      showToast("削除しました。");
+    }
+
+    function switchDate(dateKey) {
+      currentDate = dateKey;
+      renderEntries(dateKey);
+      renderHistory();
+    }
+
+    function sortedDateKeys() {
+      return Object.keys(state.days)
+        .filter((dateKey) => normalizeEntries(getSavedEntries(dateKey)).length > 0)
+        .sort((a, b) => b.localeCompare(a));
+    }
+
+    function renderHistory() {
+      const keys = sortedDateKeys();
+      historyList.innerHTML = "";
+
+      if (keys.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "empty";
+        empty.textContent = "まだ履歴はありません。";
+        historyList.append(empty);
+        return;
+      }
+
+      keys.forEach((dateKey) => {
+        const entries = normalizeEntries(getSavedEntries(dateKey));
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "history-item";
+        item.classList.toggle("active", dateKey === currentDate);
+
+        const dateLine = document.createElement("span");
+        dateLine.className = "history-date";
+        dateLine.innerHTML = `<span>${formatDate(dateKey, "short")}</span><span class="history-count">${entries.length}つ</span>`;
+
+        const preview = document.createElement("span");
+        preview.className = "history-preview";
+        preview.textContent = entries.join(" / ");
+
+        item.append(dateLine, preview);
+        item.addEventListener("click", () => switchDate(dateKey));
+        historyList.append(item);
+      });
+    }
+
+    function renderStats() {
+      const keys = Object.keys(state.days);
+      const completedKeys = keys.filter((dateKey) => normalizeEntries(getSavedEntries(dateKey)).length >= MIN_ENTRIES);
+      const totalThanks = keys.reduce((sum, dateKey) => sum + normalizeEntries(getSavedEntries(dateKey)).length, 0);
+      const today = new Date();
+      const monthPrefix = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+      const monthCount = completedKeys.filter((dateKey) => dateKey.startsWith(monthPrefix)).length;
+
+      stats.streakCount.textContent = calculateStreak(completedKeys);
+      stats.monthCount.textContent = monthCount;
+      stats.totalDays.textContent = keys.filter((dateKey) => normalizeEntries(getSavedEntries(dateKey)).length > 0).length;
+      stats.totalThanks.textContent = totalThanks;
+    }
+
+    function calculateStreak(completedKeys) {
+      const completed = new Set(completedKeys);
+      const today = new Date();
+      let cursor = new Date(today);
+      let streak = 0;
+
+      if (!completed.has(toDateKey(cursor))) {
+        cursor.setDate(cursor.getDate() - 1);
+      }
+
+      while (completed.has(toDateKey(cursor))) {
+        streak += 1;
+        cursor.setDate(cursor.getDate() - 1);
+      }
+
+      return streak;
+    }
+
+    function exportData() {
+      const payload = {
+        app: "ありがとう日記",
+        exportedAt: new Date().toISOString(),
+        days: state.days,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `arigatou-diary-${toDateKey(new Date())}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      showToast("書き出しました。");
+    }
+
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(reader.result);
+          if (!parsed || typeof parsed !== "object" || !parsed.days) {
+            throw new Error("Invalid format");
+          }
+
+          const importedDays = {};
+          Object.entries(parsed.days).forEach(([dateKey, entries]) => {
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dateKey) && Array.isArray(entries)) {
+              importedDays[dateKey] = normalizeEntries(entries.map(String));
+            }
+          });
+
+          state.days = { ...state.days, ...importedDays };
+          persistState();
+          renderEntries(currentDate);
+          renderHistory();
+          renderStats();
+          showToast("読み込みました。");
+        } catch (error) {
+          showToast("読み込めませんでした。");
+        } finally {
+          importFile.value = "";
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
+    }
+
+    addEntryButton.addEventListener("click", addEntry);
+    saveButton.addEventListener("click", () => saveCurrentDay(true));
+    clearButton.addEventListener("click", clearCurrentDay);
+    exportButton.addEventListener("click", exportData);
+    importFile.addEventListener("change", importData);
+    saveSheetSettingsButton.addEventListener("click", saveSheetSettings);
+    syncSheetButton.addEventListener("click", syncCurrentDayToSheet);
+    entryDate.addEventListener("change", (event) => {
+      if (event.target.value) {
+        switchDate(event.target.value);
+      }
+    });
+
+    loadSheetSettings();
+    renderEntries(currentDate);
+    renderHistory();
+    renderStats();
+
+    if ("serviceWorker" in navigator && window.location.protocol.startsWith("http")) {
+      navigator.serviceWorker.register("service-worker.js").catch((error) => {
+        console.warn("Could not register service worker", error);
+      });
+    }
+  </script>
+</body>
+</html>

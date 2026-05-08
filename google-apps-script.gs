@@ -3,7 +3,7 @@
  */
 const SHEET_NAME = 'ありがとう日記ログ';
 const SPREADSHEET_ID = '';
-const SCRIPT_VERSION = '2026-05-08-jsonp';
+const SCRIPT_VERSION = '2026-05-08-sync-load';
 
 function doPost(e) {
   try {
@@ -18,6 +18,10 @@ function doGet(e) {
   const callback = e && e.parameter && e.parameter.callback;
 
   try {
+    if (e && e.parameter && e.parameter.action === 'load') {
+      return createResponse_(loadDiary_(e.parameter.writer || ''), callback);
+    }
+
     if (e && e.parameter && e.parameter.payload) {
       return createResponse_(appendPayload_(parsePayload_(e)), callback);
     }
@@ -64,6 +68,47 @@ function appendPayload_(payload) {
     count: entries.length,
     version: SCRIPT_VERSION,
   };
+}
+
+function loadDiary_(writer) {
+  const sheet = getLogSheet_();
+  const values = sheet.getDataRange().getValues();
+  const days = {};
+  const targetWriter = String(writer || '').trim();
+
+  for (let index = 1; index < values.length; index += 1) {
+    const row = values[index];
+    const rowWriter = String(row[4] || '').trim();
+    const date = formatDateKey_(row[2]);
+    const entries = [
+      row[7],
+      row[8],
+      row[9],
+      ...String(row[10] || '').split('\n'),
+    ].map((entry) => String(entry || '').trim()).filter(Boolean);
+
+    if (!date || entries.length === 0) continue;
+    if (targetWriter && rowWriter !== targetWriter) continue;
+
+    days[date] = entries;
+  }
+
+  return {
+    ok: true,
+    days,
+    dayCount: Object.keys(days).length,
+    sheetName: sheet.getName(),
+    writer: targetWriter,
+    version: SCRIPT_VERSION,
+  };
+}
+
+function formatDateKey_(value) {
+  if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value.getTime())) {
+    return Utilities.formatDate(value, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  }
+
+  return String(value || '').trim();
 }
 
 function getLogSheet_() {

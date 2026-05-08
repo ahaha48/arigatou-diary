@@ -908,6 +908,14 @@
                 </svg>
                 接続テスト
               </button>
+              <button class="secondary-button" id="loadSheet" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <path d="M7 10l5 5 5-5"></path>
+                  <path d="M12 15V3"></path>
+                </svg>
+                シートから復元
+              </button>
               <button class="primary-button" id="syncSheet" type="button">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -982,6 +990,7 @@
     const sheetMessage = document.querySelector("#sheetMessage");
     const saveSheetSettingsButton = document.querySelector("#saveSheetSettings");
     const testSheetButton = document.querySelector("#testSheet");
+    const loadSheetButton = document.querySelector("#loadSheet");
     const syncSheetButton = document.querySelector("#syncSheet");
 
     const stats = {
@@ -1277,6 +1286,63 @@
       }
     }
 
+    async function loadDiaryFromSheet() {
+      const endpoint = normalizeSheetEndpoint(getSheetEndpoint());
+
+      if (!endpoint) {
+        showToast("WebアプリURLを設定してください。");
+        updateSheetStatus("未設定");
+        showSheetMessage("Apps ScriptのWebアプリURLを貼ってから、設定保存を押してください。");
+        sheetEndpoint.focus();
+        return;
+      }
+
+      if (isTestDeploymentUrl(endpoint)) {
+        updateSheetStatus("URL確認");
+        showSheetMessage("URLが /dev で終わっています。デプロイ後に発行される /exec のWebアプリURLを使ってください。");
+        showToast("WebアプリURLは /exec のURLを使ってください。");
+        return;
+      }
+
+      if (!isValidWebAppUrl(endpoint)) {
+        updateSheetStatus("URL確認");
+        showSheetMessage("WebアプリURLは https://script.google.com/macros/s/.../exec の形で、最後の /exec まで丸ごと貼ってください。");
+        showToast("WebアプリURLを確認してください。");
+        return;
+      }
+
+      updateSheetStatus("復元中");
+      clearSheetMessage();
+      loadSheetButton.disabled = true;
+
+      try {
+        const result = await sendSheetLoad(endpoint, writerName.value.trim());
+        if (!result || !result.ok) {
+          throw new Error(result && result.error ? result.error : "Apps ScriptからOKが返りませんでした。");
+        }
+
+        const days = sanitizeRemoteDays(result.days || {});
+        state.days = { ...state.days, ...days };
+        persistState();
+        renderEntries(currentDate);
+        renderHistory();
+        renderStats();
+
+        const targetSheetName = result.sheetName || "ありがとう日記ログ";
+        const dayCount = Object.keys(days).length;
+        updateSheetStatus(`復元OK ${dayCount}日`);
+        showSheetMessage(`「${targetSheetName}」タブから${dayCount}日分をアプリ内に復元しました。`);
+        showToast("シートから日記を復元しました。");
+      } catch (error) {
+        console.warn("Could not load diary from spreadsheet", error);
+        updateSheetStatus("復元エラー");
+        showSheetMessage(formatSheetError(error));
+        showToast("シートから復元できませんでした。");
+      } finally {
+        loadSheetButton.disabled = false;
+      }
+    }
+
     async function syncDayToSheet(entries, options = {}) {
       const endpoint = normalizeSheetEndpoint(getSheetEndpoint());
       if (!endpoint) return false;
@@ -1349,10 +1415,22 @@
       return sendSheetJsonp(endpoint, payload);
     }
 
-    function sendSheetJsonp(endpoint, payload) {
+    function sendSheetLoad(endpoint, writer) {
+      return sendSheetJsonp(endpoint, null, {
+        action: "load",
+        writer,
+      });
+    }
+
+    function sendSheetJsonp(endpoint, payload, params = {}) {
       const callbackName = `arigatouDiaryCallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
       const url = new URL(endpoint);
       url.searchParams.set("callback", callbackName);
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+          url.searchParams.set(key, value);
+        }
+      });
       if (payload) {
         url.searchParams.set("payload", JSON.stringify(payload));
       }
@@ -1383,6 +1461,19 @@
         script.src = url.toString();
         document.body.append(script);
       });
+    }
+
+    function sanitizeRemoteDays(days) {
+      const cleanDays = {};
+      Object.entries(days).forEach(([dateKey, entries]) => {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateKey) && Array.isArray(entries)) {
+          const cleanEntries = normalizeEntries(entries.map(String));
+          if (cleanEntries.length > 0) {
+            cleanDays[dateKey] = cleanEntries;
+          }
+        }
+      });
+      return cleanDays;
     }
 
     function formatSheetError(error) {
@@ -1617,6 +1708,7 @@
     importFile.addEventListener("change", importData);
     saveSheetSettingsButton.addEventListener("click", saveSheetSettings);
     testSheetButton.addEventListener("click", testSheetConnection);
+    loadSheetButton.addEventListener("click", loadDiaryFromSheet);
     syncSheetButton.addEventListener("click", syncCurrentDayToSheet);
     entryDate.addEventListener("change", (event) => {
       if (event.target.value) {

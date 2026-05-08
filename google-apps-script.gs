@@ -60,6 +60,7 @@ function appendPayload_(payload) {
   return {
     ok: true,
     row: sheet.getLastRow(),
+    sheetName: sheet.getName(),
     count: entries.length,
     version: SCRIPT_VERSION,
   };

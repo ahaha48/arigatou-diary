@@ -1321,8 +1321,9 @@
         if (!result || !result.ok) {
           throw new Error(result && result.error ? result.error : "Apps ScriptからOKが返りませんでした。");
         }
+        const targetSheetName = result.sheetName || "ありがとう日記ログ";
         updateSheetStatus(result.row ? `送信OK ${result.row}行目` : "送信OK");
-        showSheetMessage(result.row ? `スプレッドシートの${result.row}行目に追加しました。` : "スプレッドシートに追加しました。");
+        showSheetMessage(result.row ? `「${targetSheetName}」タブの${result.row}行目に追加しました。` : `「${targetSheetName}」タブに追加しました。`);
         if (options.notify) {
           showToast("スプレッドシートへ送信しました。");
         }

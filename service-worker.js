@@ -1,4 +1,4 @@
-const CACHE_NAME = "arigatou-diary-v4";
+const CACHE_NAME = "arigatou-diary-v5";
 const ASSETS = [
   "./",
   "./index.html",
